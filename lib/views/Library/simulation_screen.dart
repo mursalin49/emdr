@@ -15,7 +15,6 @@ import 'package:jonssony/data/bls_tone_profiles.dart';
 import 'package:jonssony/utils/transparent_media.dart';
 import 'package:jonssony/widgets/asset_animated_visual.dart';
 import 'package:jonssony/widgets/canvas_sprite_visual.dart';
-import 'package:jonssony/widgets/looping_muted_video.dart';
 import 'package:jonssony/widgets/transparent_session_visual.dart';
 import 'bls_pdf_visuals.dart';
 import 'clam_space_ex.dart';
@@ -250,14 +249,6 @@ class _SimulationScreenState extends State<SimulationScreen>
       label: widget.settings.visualLabel,
       mediaType: widget.settings.visualMediaType,
     );
-  }
-
-  bool _looksLikeVideo(String source) {
-    final path = _mediaPath(source);
-    return path.endsWith('.mp4') ||
-        path.endsWith('.mov') ||
-        path.endsWith('.webm') ||
-        path.contains('/video/upload/');
   }
 
   bool get _usesAssetAnimatedVisual {
@@ -1064,15 +1055,6 @@ class _SimulationScreenState extends State<SimulationScreen>
     );
   }
 
-  Widget _buildVideoVisualObject(double size) {
-    return StableSessionVideo(
-      url: _videoPlaybackUrl,
-      size: size,
-      playing: _videoPlayingNotifier.value,
-      fallback: _buildVideoFallback(size),
-    );
-  }
-
   Widget _buildVideoFallback(double size) {
     final configured = widget.settings.visualPlaybackUrl?.trim();
     final source = configured?.isNotEmpty == true
@@ -1468,33 +1450,7 @@ class _SimulationScreenState extends State<SimulationScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildPdfBackButton(textColor),
-                const SizedBox(height: 16),
-                Text(
-                  'THE UK INKIND PSYCHOLOGY CLINIC',
-                  style: TextStyle(
-                    color: textColor.withValues(
-                      alpha: _sceneUsesLightText ? 0.85 : 1,
-                    ),
-                    fontSize: 9,
-                    letterSpacing: 2,
-                    shadows: shadow,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  _sceneTitle,
-                  style: TextStyle(
-                    color: textColor.withValues(
-                      alpha: _sceneUsesLightText ? 0.96 : 1,
-                    ),
-                    fontSize: 20,
-                    fontFamily: 'Serif',
-                    fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w300,
-                    shadows: shadow,
-                  ),
-                ),
+                _buildPdfExitButton(textColor),
               ],
             ),
           ),
@@ -1547,74 +1503,70 @@ class _SimulationScreenState extends State<SimulationScreen>
     return '${minutes}m ${seconds.toString().padLeft(2, '0')}s';
   }
 
-  Widget _buildPdfBackButton(Color textColor) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: TextButton.icon(
-          onPressed: () => _leaveSimulation(false),
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 15,
-            color: textColor.withValues(
-              alpha: _sceneUsesLightText ? 0.95 : 1,
-            ),
-          ),
-          label: Text(
-            'Back',
-            style: TextStyle(
-              color: textColor.withValues(
-                alpha: _sceneUsesLightText ? 0.95 : 1,
-              ),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          style: TextButton.styleFrom(
-            backgroundColor: _sceneUsesLightText
-                ? Colors.white.withValues(alpha: 0.22)
-                : Colors.black.withValues(alpha: 0.06),
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(22),
-              side: BorderSide(
-                color: _sceneUsesLightText
-                    ? Colors.white.withValues(alpha: 0.35)
-                    : Colors.black.withValues(alpha: 0.1),
-              ),
-            ),
-          ),
-        ),
-      ),
+  Widget _buildPdfExitButton(Color textColor) {
+    return _buildProminentControlButton(
+      label: 'EXIT',
+      icon: Icons.close_rounded,
+      onPressed: () => _leaveSimulation(false),
+      textColor: textColor,
     );
   }
 
   Widget _buildPdfPauseButton(Color textColor) {
-    final label = _isPaused ? 'Resume' : 'Pause';
-    final icon = _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded;
+    return _buildProminentControlButton(
+      label: _isPaused ? 'RESUME' : 'PAUSE',
+      icon: _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+      onPressed: _togglePause,
+      textColor: textColor,
+      emphasized: true,
+    );
+  }
 
+  Widget _buildProminentControlButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+    required Color textColor,
+    bool emphasized = false,
+  }) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(25),
+      borderRadius: BorderRadius.circular(26),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: TextButton.icon(
-          onPressed: _togglePause,
-          icon: Icon(icon, size: 18, color: const Color(0xFF151515)),
+          onPressed: onPressed,
+          icon: Icon(
+            icon,
+            size: 20,
+            color: emphasized ? const Color(0xFF151515) : textColor,
+          ),
           label: Text(
             label,
-            style: const TextStyle(
-              color: Color(0xFF151515),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+            style: TextStyle(
+              color: emphasized ? const Color(0xFF151515) : textColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
             ),
           ),
           style: TextButton.styleFrom(
-            backgroundColor: Colors.white.withValues(alpha: 0.72),
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+            backgroundColor: emphasized
+                ? Colors.white.withValues(alpha: 0.9)
+                : (_sceneUsesLightText
+                    ? Colors.white.withValues(alpha: 0.28)
+                    : Colors.black.withValues(alpha: 0.08)),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            minimumSize: const Size(108, 48),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
-              side: BorderSide(color: Colors.black.withValues(alpha: 0.16)),
+              borderRadius: BorderRadius.circular(26),
+              side: BorderSide(
+                color: emphasized
+                    ? Colors.black.withValues(alpha: 0.18)
+                    : (_sceneUsesLightText
+                        ? Colors.white.withValues(alpha: 0.4)
+                        : Colors.black.withValues(alpha: 0.12)),
+                width: emphasized ? 1.5 : 1,
+              ),
             ),
           ),
         ),
@@ -1626,29 +1578,6 @@ class _SimulationScreenState extends State<SimulationScreen>
     final source = resolveBlsEnvironmentSource(widget.settings.environmentImage);
     return isBlsSceneSource(source) &&
         const {'night', 'forest'}.contains(blsSourceId(source));
-  }
-
-  String get _sceneTitle {
-    final source = resolveBlsEnvironmentSource(widget.settings.environmentImage);
-    if (!isBlsSceneSource(source)) {
-      return 'Bilateral Stimulation';
-    }
-
-    switch (blsSourceId(source)) {
-      case 'ocean':
-        return 'Ocean Horizon';
-      case 'night':
-        return 'Starlit Lake';
-      case 'forest':
-        return 'Enchanted Forest';
-      case 'meadow':
-        return 'Wildflower Meadow';
-      case 'autumn':
-        return 'Autumn Valley';
-      case 'mountains':
-      default:
-        return 'Mountain Sanctuary';
-    }
   }
 
   Widget _buildIntroOverlay() {
